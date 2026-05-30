@@ -62,7 +62,7 @@ export function renderLabaRugiTab() {
                         </select>
              </div>
             <div id="labaRugi-container">
-                <button id="analyze-lr-btn" class="gemini-button mb-4 w-full sm:w-auto inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700">
+                <button id="analyze-lr-btn" class="gemini-button mb-4 w-full sm:w-auto inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-right from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700">
                     <i class="fas fa-magic mr-2"></i> <span class="btn-text"> Buat Analisis Laporan</span> <i class="fas fa-spinner fa-spin"></i>
                 </button>
                 <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">

@@ -10,14 +10,21 @@ export const WORKSPACES = {
     id: "pacific-ac",
     name: "Pacific AC",
     shortName: "PACIFIC AC",
-    color: "#2563eb",      // biru
+    color: "#2563eb", // biru
     bgClass: "bg-blue-600",
+  },
+  "pacific-ac-solo": {
+    id: "pacific-ac-solo",
+    name: "Pacific AC Solo",
+    shortName: "PACIFIC AC SOLO",
+    color: "#ea580c", // oranye
+    bgClass: "bg-orange-600",
   },
   "king-gasause": {
     id: "king-gasause",
     name: "CV King Gasause",
     shortName: "KING GASAUSE",
-    color: "#16a34a",      // hijau
+    color: "#16a34a", // hijau
     bgClass: "bg-green-600",
   },
 };
