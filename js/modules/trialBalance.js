@@ -12,6 +12,14 @@ export function renderTrialBalanceTab() {
             </div>
 
             <div class="flex gap-4 mb-6 items-end bg-gray-50 p-4 rounded-md">
+                <div>
+                    <label for="tb-category-filter" class="block text-sm font-medium text-gray-700">Filter Kategori</label>
+                    <select id="tb-category-filter" class="text-center mt-3 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="">Semua Kategori</option>
+                        <option value="Residential">Residential</option>
+                        <option value="Project">Project</option>
+                    </select>
+                </div>
                 <button id="btn-render-trial-balance" class="py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                     <i class="fas fa-sync-alt mr-2"></i>Refresh
                 </button>
@@ -26,12 +34,20 @@ export function renderTrialBalanceTab() {
   document
     .getElementById("btn-render-trial-balance")
     .addEventListener("click", () => renderTrialBalance());
-
+  document
+    .getElementById("tb-category-filter")
+    .addEventListener("change", () => renderTrialBalance());
 }
 
 export function renderTrialBalance() {
   const container = document.getElementById("trial-balance-content");
-  const filteredJurnals = state.jurnals;
+  const categoryFilter =
+    document.getElementById("tb-category-filter")?.value || "";
+
+  // Filter journals by category
+  const filteredJurnals = categoryFilter
+    ? state.jurnals.filter((j) => j.category === categoryFilter)
+    : state.jurnals;
 
   // Calculate balances for each account
   const accountBalances = {};
