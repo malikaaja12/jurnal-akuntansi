@@ -5,13 +5,7 @@ import { calculateFinancials } from "./labaRugi.js";
 
 export function renderNeracaTab() {
   const container = document.getElementById("neraca-tab");
-  const categoryFilter =
-    document.getElementById("neraca-category-filter")?.value || "";
-
-  // Filter jurnals by category
-  const filteredJurnals = categoryFilter
-    ? state.jurnals.filter((j) => j.category === categoryFilter)
-    : state.jurnals;
+  const filteredJurnals = state.jurnals;
 
   const { labaBersih } = calculateFinancials(filteredJurnals);
 
@@ -59,11 +53,7 @@ export function renderNeracaTab() {
                     <p class="text-sm text-gray-500 mb-4">Posisi keuangan untuk periode berakhir pada <strong>${utils.formatMonth(state.currentMonth)}</strong>.</p>
                 </div>
                 <div class="flex gap-2 items-center">
-                    <select id="neraca-category-filter" class="rounded-md border-gray-300 shadow-sm text-sm">
-                        <option value="">Semua Kategori</option>
-                        <option value="Residential"> Residential</option>
-                        <option value="Project"> Project</option>
-                    </select>
+
                     <button id="analyze-neraca-btn" class="gemini-button inline-flex items-center text-sm py-2 px-4 border border-transparent shadow-sm font-medium rounded-md text-white bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700">
                         <i class="fas fa-magic mr-2"></i><span class="btn-text">Analisis Gemini</span><i class="fas fa-spinner fa-spin"></i>
                     </button>
@@ -95,9 +85,7 @@ export function renderNeracaTab() {
          </section>
     `;
 
-  document
-    .getElementById("neraca-category-filter")
-    .addEventListener("change", () => renderNeracaTab());
+
   document
     .getElementById("analyze-neraca-btn")
     .addEventListener("click", (e) =>
