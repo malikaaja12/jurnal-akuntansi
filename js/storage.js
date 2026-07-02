@@ -119,6 +119,77 @@ export const storage = {
     return stockData;
   },
 
+  getPreviousMonthString(monthStr) {
+    const [year, month] = monthStr.split("-").map(Number);
+    let prevYear = year;
+    let prevMonth = month - 1;
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear -= 1;
+    }
+    return `${prevYear}-${String(prevMonth).padStart(2, "0")}`;
+  },
+
+  calculateEndingCashForPeriod(parsedData, month) {
+    const cashAccounts = ["Kas", "Bank", "Kas Kecil"];
+    const endingBalances = {};
+
+    cashAccounts.forEach((accName) => {
+      const account = parsedData.settings?.akuns?.find((a) => a.name === accName);
+      const accKey = (account && account.code) ? account.code : accName;
+      const opening = parsedData.settings?.openingBalances?.[accKey];
+      endingBalances[accName] = (opening && opening.period === month) ? opening.amount : 0;
+    });
+
+    const journals = parsedData.jurnals || [];
+    journals.forEach((j) => {
+      if (cashAccounts.includes(j.akun)) {
+        endingBalances[j.akun] = (endingBalances[j.akun] || 0) + (j.debit - j.kredit);
+      }
+    });
+
+    return endingBalances;
+  },
+
+  propagateCashBalances(startMonth) {
+    const prefix = wsPrefix();
+    const allKeys = Object.keys(localStorage)
+      .filter((k) => k.startsWith(prefix) && !k.endsWith("global"))
+      .sort();
+
+    const startKey = key(`accountingApp_${startMonth}`);
+    const startIndex = allKeys.indexOf(startKey);
+    if (startIndex === -1) return;
+
+    const startData = JSON.parse(localStorage.getItem(startKey));
+    if (!startData) return;
+
+    let currentEndingBalances = this.calculateEndingCashForPeriod(startData, startMonth);
+
+    for (let i = startIndex + 1; i < allKeys.length; i++) {
+      const nextKey = allKeys[i];
+      const nextMonth = nextKey.replace(prefix, "");
+      const nextData = JSON.parse(localStorage.getItem(nextKey));
+      if (!nextData) continue;
+
+      if (!nextData.settings) nextData.settings = {};
+      if (!nextData.settings.openingBalances) nextData.settings.openingBalances = {};
+
+      const cashAccounts = ["Kas", "Bank", "Kas Kecil"];
+      cashAccounts.forEach((accName) => {
+        const account = nextData.settings.akuns?.find((a) => a.name === accName);
+        const accKey = (account && account.code) ? account.code : accName;
+        nextData.settings.openingBalances[accKey] = {
+          amount: currentEndingBalances[accName] || 0,
+          period: nextMonth,
+        };
+      });
+
+      currentEndingBalances = this.calculateEndingCashForPeriod(nextData, nextMonth);
+      localStorage.setItem(nextKey, JSON.stringify(nextData));
+    }
+  },
+
   loadData(month) {
     const dataKey = key(`accountingApp_${month}`);
     const data = localStorage.getItem(dataKey);
@@ -193,6 +264,34 @@ export const storage = {
         state.stock = { items: [], transactions: [] };
       }
 
+      // C. LOGIKA CARRY OVER SALDO KAS
+      if (prevData) {
+        const prevMonth = this.getPreviousMonthString(month);
+        const prevEndingCash = this.calculateEndingCashForPeriod(prevData, prevMonth);
+        
+        if (!state.settings.openingBalances) {
+          state.settings.openingBalances = {};
+        }
+
+        const cashAccounts = ["Kas", "Bank", "Kas Kecil"];
+        let cashCarriedOver = false;
+        cashAccounts.forEach((accName) => {
+          const account = state.settings.akuns?.find((a) => a.name === accName);
+          const accKey = (account && account.code) ? account.code : accName;
+          
+          state.settings.openingBalances[accKey] = {
+            amount: prevEndingCash[accName] || 0,
+            period: month,
+          };
+          if (prevEndingCash[accName] > 0) {
+            cashCarriedOver = true;
+          }
+        });
+        if (cashCarriedOver) {
+          notifMessage += `<li>Saldo kas awal disalin dari saldo akhir periode sebelumnya.</li>`;
+        }
+      }
+
       if (notifMessage) {
         setTimeout(() => {
           utils.showModal(
@@ -214,6 +313,9 @@ export const storage = {
       piutangs: state.piutangs,
     };
     localStorage.setItem(dataKey, JSON.stringify(dataToSave));
+
+    this.propagateCashBalances(state.currentMonth);
+
     localStorage.setItem(
       key("accountingApp_global"),
       JSON.stringify({ activeTab: state.activeTab }),
@@ -296,7 +398,7 @@ export const storage = {
                       localStorage.setItem(k, value);
                     } else if (k.startsWith("accountingApp_")) {
                       // Backup lama tanpa namespace — pasang prefix workspace ini
-                      localStorage.setItem(`${prefix}${k.slice("accountingApp_".length - 1)}`, value);
+                      localStorage.setItem(`${prefix}${k.slice("accountingApp_".length)}`, value);
                     }
                   });
                   utils.closeModal();
