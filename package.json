@@ -1,7 +1,4 @@
 {
-  "scripts": {
-    "dev": "npx http-server -p 5502 -c-1"
-  },
   "dependencies": {
     "@tailwindcss/cli": "^4.2.4",
     "chart.js": "^4.5.1",

@@ -97,24 +97,19 @@ const app = {
   },
 
   renderAll() {
-    try {
-      const tab = state.activeTab;
-      console.log("Rendering tab:", tab);
-      if (tab === "dashboard") renderDashboardTab();
-      else if (tab === "jurnal") renderJurnalTab();
-      else if (tab === "bukuBesar") renderBukuBesarTab();
-      else if (tab === "trialBalance") renderTrialBalanceTab();
-      else if (tab === "labaRugi") renderLabaRugiTab();
-      else if (tab === "pengaturan") renderPengaturanTab();
-      else if (tab === "akun") renderAkunTab();
-      else if (tab === "neraca") renderNeracaTab();
-      else if (tab === "arusKas") renderArusKasTab();
-      else if (tab === "dataPiutang") renderDataPiutangTab();
-      else if (tab === "stockBarang") renderStockBarangTab();
-      else if (tab === "kelompok") renderKelompokTab();
-    } catch (err) {
-      console.error("Error in renderAll:", err);
-    }
+    const tab = state.activeTab;
+    if (tab === "dashboard") renderDashboardTab();
+    else if (tab === "jurnal") renderJurnalTab();
+    else if (tab === "bukuBesar") renderBukuBesarTab();
+    else if (tab === "trialBalance") renderTrialBalanceTab();
+    else if (tab === "labaRugi") renderLabaRugiTab();
+    else if (tab === "pengaturan") renderPengaturanTab();
+    else if (tab === "akun") renderAkunTab();
+    else if (tab === "neraca") renderNeracaTab();
+    else if (tab === "arusKas") renderArusKasTab();
+    else if (tab === "dataPiutang") renderDataPiutangTab();
+    else if (tab === "stockBarang") renderStockBarangTab();
+    else if (tab === "kelompok") renderKelompokTab();
   },
 
   addEventListeners() {
@@ -148,11 +143,7 @@ const app = {
 
 // Expose app for inline onclick handlers in HTML (legacy support)
 window.app = app;
-if (document.readyState === "loading") {
-  window.addEventListener("DOMContentLoaded", () => app.init());
-} else {
-  app.init();
-}
+window.onload = () => app.init();
 
 export function renderAll() {
   app.renderAll();
