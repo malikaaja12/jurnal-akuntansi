@@ -12,7 +12,7 @@ export const geminiService = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     };
     const apiKey = "nanti-dulu-bos"; // Ganti dengan API key Anda
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta2/models/gemini-2.5-Flash-preview:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(apiUrl, {
