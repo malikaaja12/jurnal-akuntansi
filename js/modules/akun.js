@@ -53,26 +53,31 @@ export function renderAkunTab() {
 const TIPE_CONFIG = {
   Aset: {
     label: "Aset",
+    icon: "fa-landmark",
     header: "bg-blue-50 border-blue-200 text-blue-700",
     badge: "bg-blue-100 text-blue-700",
   },
   Liabilitas: {
     label: "Liabilitas",
+    icon: "fa-hand-holding-usd",
     header: "bg-red-50 border-red-400 text-red-700",
     badge: "bg-red-100 text-red-700",
   },
   Ekuitas: {
     label: "Ekuitas",
+    icon: "fa-user-tie",
     header: "bg-purple-50 border-purple-200 text-purple-700",
     badge: "bg-purple-100 text-purple-700",
   },
   Pendapatan: {
     label: "Pendapatan",
+    icon: "fa-arrow-up",
     header: "bg-green-50 border-green-200 text-green-700",
     badge: "bg-green-100 text-green-700",
   },
   Beban: {
     label: "Beban",
+    icon: "fa-arrow-down",
     header: "bg-orange-50 border-orange-200 text-orange-700",
     badge: "bg-orange-100 text-orange-700",
   },
