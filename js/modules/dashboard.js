@@ -4,241 +4,251 @@ import { calculateFinancials } from "./labaRugi.js";
 import { accountingUtils } from "../accountingUtils.js";
 
 export function renderDashboardTab() {
-  const container = document.getElementById("dashboard-tab");
-
-  // Calculate financial data
-  const {
-    totalPendapatan,
-    totalBeban,
-    labaBersih,
-    pendapatanDetails,
-    bebanDetails,
-  } = calculateFinancials();
-
-  // Calculate cash flow
-  const cashAccounts = ["Kas", "Bank", "Kas Kecil"];
-  let totalCash = 0;
-
-  state.jurnals.forEach((j) => {
-    if (cashAccounts.includes(j.akun)) {
-      totalCash += j.debit - j.kredit;
+  try {
+    console.log("Inside renderDashboardTab");
+    const container = document.getElementById("dashboard-tab");
+    if (!container) {
+      console.error("dashboard-tab element not found");
+      return;
     }
-  });
 
-  // Get opening balance for cash
-  cashAccounts.forEach((accName) => {
-    const account = state.settings.akuns.find((a) => a.name === accName);
-    if (account && account.code) {
-      const opening = state.settings.openingBalances?.[account.code];
-      if (opening && opening.period === state.currentMonth) {
-        totalCash += opening.amount;
+    // Calculate financial data
+    const {
+      totalPendapatan,
+      totalBeban,
+      labaBersih,
+      pendapatanDetails,
+      bebanDetails,
+    } = calculateFinancials();
+
+    // Calculate cash flow
+    const cashAccounts = ["Kas", "Bank", "Kas Kecil"];
+    let totalCash = 0;
+
+    state.jurnals.forEach((j) => {
+      if (cashAccounts.includes(j.akun)) {
+        totalCash += j.debit - j.kredit;
       }
-    }
-  });
+    });
 
-  // Count transactions
-  const totalTransactions = state.jurnals.length;
-  const uniqueJournals = [...new Set(state.jurnals.map((j) => j.noBukti))]
-    .length;
+    // Get opening balance for cash
+    cashAccounts.forEach((accName) => {
+      const account = state.settings.akuns.find((a) => a.name === accName);
+      if (account) {
+        const accKey = account.code || account.name;
+        const opening = state.settings.openingBalances?.[accKey];
+        if (opening && opening.period === state.currentMonth) {
+          totalCash += opening.amount;
+        }
+      }
+    });
 
-  // Trial balance validation
-  const { isBalanced, difference } = accountingUtils.validateTrialBalance();
+    // Count transactions
+    const totalTransactions = state.jurnals.length;
+    const uniqueJournals = [...new Set(state.jurnals.map((j) => j.noBukti))]
+      .length;
 
-  // Recent transactions (last 5)
-  const recentJournals = [...new Set(state.jurnals.map((j) => j.noBukti))]
-    .slice(-5)
-    .reverse();
+    // Trial balance validation
+    const { isBalanced, difference } = accountingUtils.validateTrialBalance();
 
-  container.innerHTML = `
-        <div class="space-y-6">
-            <!-- Header -->
-            <div class="bg-linear-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-lg shadow-lg">
-                <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
-                <p class="text-blue-100">Periode: <strong>${utils.formatMonth(
-                  state.currentMonth,
-                )}</strong></p>
-            </div>
+    // Recent transactions (last 5)
+    const recentJournals = [...new Set(state.jurnals.map((j) => j.noBukti))]
+      .slice(-5)
+      .reverse();
 
-            <!-- KPI Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Laba Bersih -->
-                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 ${
-                  labaBersih >= 0 ? "border-green-500" : "border-red-500"
-                }">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 font-medium">Laba Bersih</p>
-                            <p class="text-2xl font-bold ${
-                              labaBersih >= 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            } mt-2">
-                                ${utils.formatCurrency(labaBersih)}
-                            </p>
-                        </div>
-                        <div class="bg-${
-                          labaBersih >= 0 ? "green" : "red"
-                        }-100 p-3 rounded-full">
-                            <i class="fas fa-chart-line text-2xl text-${
-                              labaBersih >= 0 ? "green" : "red"
-                            }-600"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-3">
-                        <i class="fas fa-${
-                          labaBersih >= 0
-                            ? "arrow-up text-green-500"
-                            : "arrow-down text-red-500"
-                        }"></i>
-                        ${labaBersih >= 0 ? "Profit" : "Loss"}
-                    </p>
-                </div>
+    container.innerHTML = `
+          <div class="space-y-6">
+              <!-- Header -->
+              <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-lg shadow-lg">
+                  <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
+                  <p class="text-blue-100">Periode: <strong>${utils.formatMonth(
+                    state.currentMonth,
+                  )}</strong></p>
+              </div>
 
-                <!-- Total Pendapatan -->
-                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 font-medium">Total Pendapatan</p>
-                            <p class="text-2xl font-bold text-blue-600 mt-2">
-                                ${utils.formatCurrency(totalPendapatan)}
-                            </p>
-                        </div>
-                        <div class="bg-blue-100 p-3 rounded-full">
-                            <i class="fas fa-dollar-sign text-2xl text-blue-600"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-3">
-                        <i class="fas fa-info-circle"></i> Revenue
-                    </p>
-                </div>
+              <!-- KPI Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <!-- Laba Bersih -->
+                  <div class="bg-white p-6 rounded-lg shadow-md border-l-4 ${
+                    labaBersih >= 0 ? "border-green-500" : "border-red-500"
+                  }">
+                      <div class="flex items-center justify-between">
+                          <div>
+                              <p class="text-sm text-gray-600 font-medium">Laba Bersih</p>
+                              <p class="text-2xl font-bold ${
+                                labaBersih >= 0
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              } mt-2">
+                                  ${utils.formatCurrency(labaBersih)}
+                              </p>
+                          </div>
+                          <div class="bg-${
+                            labaBersih >= 0 ? "green" : "red"
+                          }-100 p-3 rounded-full">
+                              <i class="fas fa-chart-line text-2xl text-${
+                                labaBersih >= 0 ? "green" : "red"
+                              }-600"></i>
+                          </div>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-3">
+                          <i class="fas fa-${
+                            labaBersih >= 0
+                              ? "arrow-up text-green-500"
+                              : "arrow-down text-red-500"
+                          }"></i>
+                          ${labaBersih >= 0 ? "Profit" : "Loss"}
+                      </p>
+                  </div>
 
-                <!-- Total Beban -->
-                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 font-medium">Total Beban</p>
-                            <p class="text-2xl font-bold text-orange-600 mt-2">
-                                ${utils.formatCurrency(totalBeban)}
-                            </p>
-                        </div>
-                        <div class="bg-orange-100 p-3 rounded-full">
-                            <i class="fas fa-receipt text-2xl text-orange-600"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-3">
-                        <i class="fas fa-info-circle"></i> Expenses
-                    </p>
-                </div>
+                  <!-- Total Pendapatan -->
+                  <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                      <div class="flex items-center justify-between">
+                          <div>
+                              <p class="text-sm text-gray-600 font-medium">Total Pendapatan</p>
+                              <p class="text-2xl font-bold text-blue-600 mt-2">
+                                  ${utils.formatCurrency(totalPendapatan)}
+                              </p>
+                          </div>
+                          <div class="bg-blue-100 p-3 rounded-full">
+                              <i class="fas fa-dollar-sign text-2xl text-blue-600"></i>
+                          </div>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-3">
+                          <i class="fas fa-info-circle"></i> Revenue
+                      </p>
+                  </div>
 
-                <!-- Saldo Kas -->
-                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600 font-medium">Saldo Kas</p>
-                            <p class="text-2xl font-bold text-purple-600 mt-2">
-                                ${utils.formatCurrency(totalCash)}
-                            </p>
-                        </div>
-                        <div class="bg-purple-100 p-3 rounded-full">
-                            <i class="fas fa-wallet text-2xl text-purple-600"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-3">
-                        <i class="fas fa-info-circle"></i> Cash Balance
-                    </p>
-                </div>
-            </div>
+                  <!-- Total Beban -->
+                  <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
+                      <div class="flex items-center justify-between">
+                          <div>
+                              <p class="text-sm text-gray-600 font-medium">Total Beban</p>
+                              <p class="text-2xl font-bold text-orange-600 mt-2">
+                                  ${utils.formatCurrency(totalBeban)}
+                              </p>
+                          </div>
+                          <div class="bg-orange-100 p-3 rounded-full">
+                              <i class="fas fa-receipt text-2xl text-orange-600"></i>
+                          </div>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-3">
+                          <i class="fas fa-info-circle"></i> Expenses
+                      </p>
+                  </div>
 
-            <!-- Charts Row -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Laba Rugi Pie Chart -->
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-chart-pie text-blue-600 mr-2"></i>
-                        Komposisi Laba Rugi
-                    </h3>
-                    <div class="chart-container" style="height: 300px;">
-                        <canvas id="dashboard-profit-chart"></canvas>
-                    </div>
-                </div>
+                  <!-- Saldo Kas -->
+                  <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+                      <div class="flex items-center justify-between">
+                          <div>
+                              <p class="text-sm text-gray-600 font-medium">Saldo Kas</p>
+                              <p class="text-2xl font-bold text-purple-600 mt-2">
+                                  ${utils.formatCurrency(totalCash)}
+                              </p>
+                          </div>
+                          <div class="bg-purple-100 p-3 rounded-full">
+                              <i class="fas fa-wallet text-2xl text-purple-600"></i>
+                          </div>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-3">
+                          <i class="fas fa-info-circle"></i> Cash Balance
+                      </p>
+                  </div>
+              </div>
 
-                <!-- Arus Kas Line Chart -->
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                        <i class="fas fa-chart-line text-green-600 mr-2"></i>
-                        Tren Saldo Kas Harian
-                    </h3>
-                    <div class="chart-container" style="height: 300px;">
-                        <canvas id="dashboard-cashflow-chart"></canvas>
-                    </div>
-                </div>
-            </div>
+              <!-- Charts Row -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <!-- Laba Rugi Pie Chart -->
+                  <div class="bg-white p-6 rounded-lg shadow-md">
+                      <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                          <i class="fas fa-chart-pie text-blue-600 mr-2"></i>
+                          Komposisi Laba Rugi
+                      </h3>
+                      <div class="chart-container" style="height: 300px;">
+                          <canvas id="dashboard-profit-chart"></canvas>
+                      </div>
+                  </div>
 
-            <!-- Bottom Row -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Recent Transactions -->
-                <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-history text-indigo-600 mr-2"></i>
-                        Transaksi Terbaru
-                    </h3>
-                    <div id="recent-transactions" class="space-y-3">
-                        ${renderRecentTransactions(recentJournals)}
-                    </div>
-                </div>
+                  <!-- Arus Kas Line Chart -->
+                  <div class="bg-white p-6 rounded-lg shadow-md">
+                      <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                          <i class="fas fa-chart-line text-green-600 mr-2"></i>
+                          Tren Saldo Kas Harian
+                      </h3>
+                      <div class="chart-container" style="height: 300px;">
+                          <canvas id="dashboard-cashflow-chart"></canvas>
+                      </div>
+                  </div>
+              </div>
 
-                <!-- Quick Stats -->
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-info-circle text-gray-600 mr-2"></i>
-                        Statistik
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center pb-3 border-b">
-                            <span class="text-sm text-gray-600">Total Jurnal</span>
-                            <span class="font-bold text-gray-900">${uniqueJournals}</span>
-                        </div>
-                        <div class="flex justify-between items-center pb-3 border-b">
-                            <span class="text-sm text-gray-600">Total Entri</span>
-                            <span class="font-bold text-gray-900">${totalTransactions}</span>
-                        </div>
-                        <div class="flex justify-between items-center pb-3 border-b">
-                            <span class="text-sm text-gray-600">Akun Aktif</span>
-                            <span class="font-bold text-gray-900">${
-                              state.settings.akuns.length
-                            }</span>
-                        </div>
-                        <div class="flex justify-between items-center pb-3 border-b">
-                            <span class="text-sm text-gray-600">Trial Balance</span>
-                            <span class="font-bold ${
-                              isBalanced ? "text-green-600" : "text-red-600"
-                            }">
-                                ${
-                                  isBalanced ? "✓ Seimbang" : "✗ Tidak Seimbang"
-                                }
-                            </span>
-                        </div>
-                        ${
-                          !isBalanced
-                            ? `
-                        <div class="bg-red-50 p-3 rounded-md">
-                            <p class="text-xs text-red-700">
-                                <i class="fas fa-exclamation-triangle mr-1"></i>
-                                Selisih: ${utils.formatCurrency(difference)}
-                            </p>
-                        </div>
-                        `
-                            : ""
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+              <!-- Bottom Row -->
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <!-- Recent Transactions -->
+                  <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+                      <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                          <i class="fas fa-history text-indigo-600 mr-2"></i>
+                          Transaksi Terbaru
+                      </h3>
+                      <div id="recent-transactions" class="space-y-3">
+                          ${renderRecentTransactions(recentJournals)}
+                      </div>
+                  </div>
 
-  // Render charts
-  renderProfitChart(pendapatanDetails, bebanDetails);
-  renderCashflowChart();
+                  <!-- Quick Stats -->
+                  <div class="bg-white p-6 rounded-lg shadow-md">
+                      <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                          <i class="fas fa-info-circle text-gray-600 mr-2"></i>
+                          Statistik
+                      </h3>
+                      <div class="space-y-4">
+                          <div class="flex justify-between items-center pb-3 border-b">
+                              <span class="text-sm text-gray-600">Total Jurnal</span>
+                              <span class="font-bold text-gray-900">${uniqueJournals}</span>
+                          </div>
+                          <div class="flex justify-between items-center pb-3 border-b">
+                              <span class="text-sm text-gray-600">Total Entri</span>
+                              <span class="font-bold text-gray-900">${totalTransactions}</span>
+                          </div>
+                          <div class="flex justify-between items-center pb-3 border-b">
+                              <span class="text-sm text-gray-600">Akun Aktif</span>
+                              <span class="font-bold text-gray-900">${
+                                state.settings.akuns.length
+                              }</span>
+                          </div>
+                          <div class="flex justify-between items-center pb-3 border-b">
+                              <span class="text-sm text-gray-600">Trial Balance</span>
+                              <span class="font-bold ${
+                                isBalanced ? "text-green-600" : "text-red-600"
+                              }">
+                                  ${
+                                    isBalanced ? "✓ Seimbang" : "✗ Tidak Seimbang"
+                                  }
+                              </span>
+                          </div>
+                          ${
+                            !isBalanced
+                              ? `
+                          <div class="bg-red-50 p-3 rounded-md">
+                              <p class="text-xs text-red-700">
+                                  <i class="fas fa-exclamation-triangle mr-1"></i>
+                                  Selisih: ${utils.formatCurrency(difference)}
+                              </p>
+                          </div>
+                          `
+                              : ""
+                          }
+                      </div>
+                  </div>
+              </div>
+          </div>
+      `;
+
+    // Render charts
+    renderProfitChart(pendapatanDetails, bebanDetails);
+    renderCashflowChart();
+  } catch (err) {
+    console.error("Error inside renderDashboardTab:", err);
+  }
 }
 
 function renderRecentTransactions(recentJournals) {
@@ -268,17 +278,7 @@ function renderRecentTransactions(recentJournals) {
                     <p class="text-xs text-gray-500">${first.tanggal} • ${
                       first.kelompok || "Lainnya"
                     }</p>
-                    ${
-                      first.category
-                        ? `<span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
-                            first.category === "Residential"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-green-100 text-green-700"
-                          }">${
-                            first.category === "Residential" ? "" : ""
-                          } ${first.category}</span>`
-                        : ""
-                    }
+
                 </div>
                 <div class="text-right">
                     <p class="font-bold text-sm text-gray-900">${utils.formatCurrency(
@@ -400,8 +400,9 @@ function renderCashflowChart() {
   let openingBalance = 0;
   cashAccounts.forEach((accName) => {
     const account = state.settings.akuns.find((a) => a.name === accName);
-    if (account && account.code) {
-      const opening = state.settings.openingBalances?.[account.code];
+    if (account) {
+      const accKey = account.code || account.name;
+      const opening = state.settings.openingBalances?.[accKey];
       if (opening && opening.period === state.currentMonth) {
         openingBalance += opening.amount;
       }

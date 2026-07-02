@@ -20,6 +20,13 @@ export const WORKSPACES = {
     color: "#16a34a",      // hijau
     bgClass: "bg-green-600",
   },
+  "pacific-ac-solo": {
+    id: "pacific-ac-solo",
+    name: "Pacific AC SOLO",
+    shortName: "PACIFIC SOLO",
+    color: "#90a316ff",      // kuning
+    bgClass: "bg-yellow-600",
+  },
 };
 
 export const DEFAULT_WORKSPACE = "pacific-ac";

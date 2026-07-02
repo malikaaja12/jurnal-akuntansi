@@ -3,13 +3,7 @@ import { utils } from "../utils.js";
 
 export function renderArusKasTab() {
   const container = document.getElementById("arusKas-tab");
-  const categoryFilter =
-    document.getElementById("aruskas-category-filter")?.value || "";
-
-  // Filter jurnals by category
-  const filteredJurnals = categoryFilter
-    ? state.jurnals.filter((j) => j.category === categoryFilter)
-    : state.jurnals;
+  const filteredJurnals = state.jurnals;
 
   const grouped = filteredJurnals.reduce((acc, curr) => {
     if (!acc[curr.noBukti]) acc[curr.noBukti] = [];
@@ -103,13 +97,7 @@ export function renderArusKasTab() {
             <div class="text-center mb-10 pb-6 border-b border-gray-200">
                 <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">Laporan Arus Kas</h2>
                 <p class="text-gray-500 mt-2 text-lg">Periode: <span class="font-medium text-blue-600">${utils.formatMonth(state.currentMonth)}</span></p>
-                <div class="mt-4">
-                    <select id="aruskas-category-filter" class="rounded-md border-gray-300 shadow-sm text-sm">
-                        <option value="">Semua Kategori</option>
-                        <option value="Residential"> Residential</option>
-                        <option value="Project"> Project</option>
-                    </select>
-                </div>
+
             </div>
             <div class="space-y-2">
                 ${renderSection("Arus Kas dari Aktivitas Operasi", activities.operasi, totalOperasi)}
@@ -127,8 +115,5 @@ export function renderArusKasTab() {
         </section>
     `;
 
-  const filterElement = document.getElementById("aruskas-category-filter");
-  if (filterElement) {
-    filterElement.addEventListener("change", () => renderArusKasTab());
-  }
+
 }
