@@ -3,6 +3,8 @@ import { utils } from "../utils.js";
 import { storage } from "../storage.js";
 import { geminiService } from "../services/gemini.js";
 
+let editingNoBukti = null;
+
 export function getAkunOptions(includePlaceholder = false) {
   let options = includePlaceholder
     ? '<option value="">-- Pilih Akun --</option>'
@@ -29,6 +31,7 @@ export function getKelompokOptions(
 }
 
 export function renderJurnalTab() {
+  editingNoBukti = null;
   const container = document.getElementById("jurnal-tab");
   const defaultDate = new Date(state.currentMonth + "-01")
     .toISOString()
@@ -40,8 +43,8 @@ export function renderJurnalTab() {
 
         </div>
         <section class="bg-white p-6 rounded-lg shadow-sm mb-6">
-            <h2 class="text-xl font-semibold mb-2">Input Transaksi</h2>
-            <p class="text-sm text-gray-500 mb-4">Atur tanggal dan kelompok, lalu tambahkan satu atau lebih baris detail transaksi.</p>
+            <h2 class="text-xl font-semibold mb-2" id="input-jurnal-title">Input Transaksi</h2>
+            <p class="text-sm text-gray-500 mb-4" id="input-jurnal-desc">Atur tanggal dan kelompok, lalu tambahkan satu atau lebih baris detail transaksi.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 bg-gray-50 p-4 rounded-md border">
                 <div>
                     <label for="batch-tanggal" class="block text-sm font-medium text-gray-700">Tanggal Transaksi</label>
@@ -53,14 +56,7 @@ export function renderJurnalTab() {
                         ${getKelompokOptions(true, "Pilih Kelompok")}
                     </select>
                 </div>
-                <div>
-                    <label for="batch-category" class="block text-sm font-medium text-gray-700">Kategori</label>
-                    <select id="batch-category" class="text-center  mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                        <option value="">-- Pilih Kategori --</option>
-                        <option value="Residential">Residential</option>
-                        <option value="Project"> Project</option>
-                    </select>
-                </div>
+
             </div>
             <div class="overflow-x-auto">
                 <table id="jurnal-input-table" class="min-w-full">
@@ -77,6 +73,7 @@ export function renderJurnalTab() {
                 </table>
             </div>
             <div class="mt-4 flex flex-wrap gap-2 justify-end">
+                <button id="cancel-edit-btn" class="hidden inline-flex items-center py-2 px-4 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"><i class="fas fa-times mr-2"></i>Batal Edit</button>
                 <button id="add-row-btn" class="inline-flex items-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"><i class="fas fa-plus mr-2"></i>Tambah Baris</button>
                 <button id="save-jurnals-btn" class="inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"><i class="fas fa-save mr-2"></i>Simpan Transaksi</button>
             </div>
@@ -84,13 +81,7 @@ export function renderJurnalTab() {
         <section class="bg-white p-6 rounded-lg shadow-sm">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold">Daftar Jurnal (Riwayat Transaksi)</h2>
-                <div class="flex gap-2">
-                    <select id="filter-category" class="rounded-md border-gray-300 shadow-sm text-sm">
-                        <option value="">Semua Kategori</option>
-                        <option value="Residential">Residential</option>
-                        <option value="Project">Project</option>
-                    </select>
-                </div>
+<div></div>
             </div>
             <div id="jurnal-list-container" class="space-y-4"></div>
         </section>`;
@@ -105,8 +96,9 @@ export function renderJurnalTab() {
     .getElementById("save-jurnals-btn")
     .addEventListener("click", () => saveJurnals());
   document
-    .getElementById("filter-category")
-    .addEventListener("change", () => renderJurnalTable());
+    .getElementById("cancel-edit-btn")
+    .addEventListener("click", () => cancelEdit());
+
   document
     .getElementById("jurnal-input-body")
     .addEventListener("click", (e) => {
@@ -119,11 +111,14 @@ export function renderJurnalTab() {
     .addEventListener("click", (e) => {
       const analyzeBtn = e.target.closest("button[data-action='analyze']");
       const deleteBtn = e.target.closest("button[data-action='delete']");
+      const editBtn = e.target.closest("button[data-action='edit']");
 
       if (analyzeBtn) {
         analyzeTransaction(analyzeBtn, analyzeBtn.dataset.nobukti);
       } else if (deleteBtn) {
         deleteJurnal(deleteBtn.dataset.nobukti);
+      } else if (editBtn) {
+        editJurnal(editBtn.dataset.nobukti);
       }
     });
 }
@@ -144,14 +139,14 @@ export function addInputRow() {
 export function saveJurnals() {
   const batchTanggal = document.getElementById("batch-tanggal").value;
   const batchKelompok = document.getElementById("batch-kelompok").value;
-  const batchCategory = document.getElementById("batch-category").value;
+
   let hasError = false;
   let wrongMonthError = false;
 
-  if (!batchTanggal || !batchKelompok || !batchCategory) {
+  if (!batchTanggal || !batchKelompok) {
     utils.showModal(
       "Peringatan",
-      "Tanggal, Kelompok, dan Kategori transaksi harus diisi terlebih dahulu.",
+      "Tanggal dan Kelompok transaksi harus diisi terlebih dahulu.",
     );
     document
       .getElementById("batch-tanggal")
@@ -159,14 +154,10 @@ export function saveJurnals() {
     document
       .getElementById("batch-kelompok")
       .classList.toggle("input-error", !batchKelompok);
-    document
-      .getElementById("batch-category")
-      .classList.toggle("input-error", !batchCategory);
     return;
   } else {
     document.getElementById("batch-tanggal").classList.remove("input-error");
     document.getElementById("batch-kelompok").classList.remove("input-error");
-    document.getElementById("batch-category").classList.remove("input-error");
   }
 
   if (batchTanggal.slice(0, 7) !== state.currentMonth) {
@@ -219,7 +210,7 @@ export function saveJurnals() {
     return;
   }
 
-  const batchNoBukti = `TRX-${Date.now()}`;
+  const batchNoBukti = editingNoBukti || `TRX-${Date.now()}`;
 
   validRows.forEach((row) => {
     const jumlah = parseFloat(row.querySelector(".input-jumlah").value);
@@ -231,7 +222,6 @@ export function saveJurnals() {
       noBukti: batchNoBukti,
       keterangan: keterangan,
       kelompok: batchKelompok,
-      category: batchCategory,
     };
     newJurnals.push({
       ...baseEntry,
@@ -249,14 +239,20 @@ export function saveJurnals() {
     });
   });
 
+  if (editingNoBukti) {
+    state.jurnals = state.jurnals.filter((j) => j.noBukti !== editingNoBukti);
+  }
+
   state.jurnals.push(...newJurnals);
   storage.saveData();
   renderJurnalTable();
-  document.getElementById("jurnal-input-body").innerHTML = "";
-  addInputRow();
+  const wasEditing = !!editingNoBukti;
+  cancelEdit();
   utils.showModal(
     "Sukses",
-    `${validRows.length} transaksi berhasil disimpan untuk periode ${utils.formatMonth(state.currentMonth)}!`,
+    wasEditing
+      ? `Transaksi ${batchNoBukti} berhasil diperbarui!`
+      : `${validRows.length} transaksi berhasil disimpan untuk periode ${utils.formatMonth(state.currentMonth)}!`,
   );
 }
 
@@ -264,14 +260,9 @@ export function renderJurnalTable() {
   const container = document.getElementById("jurnal-list-container");
   if (!container) return;
 
-  const filterCategory =
-    document.getElementById("filter-category")?.value || "";
   container.innerHTML = "";
 
-  // Filter journals by category
-  const filteredJurnals = filterCategory
-    ? state.jurnals.filter((j) => j.category === filterCategory)
-    : state.jurnals;
+  const filteredJurnals = state.jurnals;
 
   const groupedJurnals = filteredJurnals.reduce((acc, j) => {
     (acc[j.noBukti] = acc[j.noBukti] || []).push(j);
@@ -285,10 +276,7 @@ export function renderJurnalTable() {
   });
 
   if (sortedNoBukti.length === 0) {
-    const message = filterCategory
-      ? `Tidak ada jurnal ${filterCategory} untuk periode ${utils.formatMonth(state.currentMonth)}.`
-      : `Belum ada jurnal yang tersimpan untuk periode ${utils.formatMonth(state.currentMonth)}.`;
-    container.innerHTML = `<div class="text-center py-8 text-gray-500">${message}</div>`;
+    container.innerHTML = `<div class="text-center py-8 text-gray-500">Belum ada jurnal yang tersimpan untuk periode ${utils.formatMonth(state.currentMonth)}.</div>`;
     return;
   }
 
@@ -335,14 +323,14 @@ export function renderJurnalTable() {
                         <p class="font-semibold text-gray-800">${firstEntry.noBukti}</p>
                         <p class="text-sm text-gray-500">
                             ${firstEntry.tanggal} | Kelompok: ${firstEntry.kelompok || "Lainnya"}
-                            ${firstEntry.category ? `| <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${firstEntry.category === "Residential" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}">${firstEntry.category === "Residential" ? "" : ""} ${firstEntry.category}</span>` : ""}
                         </p>
                     </div>
                      <div class="flex items-center gap-2">
                         <button data-action="analyze" data-nobukti="${noBukti}" class="gemini-button inline-flex items-center text-xs py-1 px-3 border border-transparent shadow-sm font-medium rounded-md text-white bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700">
                             <i class="fas fa-magic mr-1"></i> <span class="btn-text">Analisis</span> <i class="fas fa-spinner fa-spin"></i>
                         </button>
-                        <button data-action="delete" data-nobukti="${noBukti}" class="text-gray-400 hover:text-red-600 text-xs py-1 px-2"><i class="fas fa-trash"></i></button>
+                        <button data-action="edit" data-nobukti="${noBukti}" class="text-gray-400 hover:text-blue-600 text-xs py-1 px-2" title="Edit Transaksi"><i class="fas fa-edit"></i></button>
+                        <button data-action="delete" data-nobukti="${noBukti}" class="text-gray-400 hover:text-red-600 text-xs py-1 px-2" title="Hapus Transaksi"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
                 <table class="min-w-full">
@@ -397,4 +385,113 @@ export function analyzeTransaction(button, noBukti) {
     .join("\n");
   const prompt = `Anda adalah seorang akuntan ahli yang ramah. Analisis entri jurnal umum berikut untuk sebuah bisnis kecil di Indonesia. Jelaskan dalam bahasa Indonesia yang sederhana apa arti transaksi ini dari sudut pandang bisnis. Berikan penjelasan dalam format poin-poin ringkas. Transaksi:\n${transactionDetails}`;
   geminiService.callAPI(prompt, button);
+}
+
+export function editJurnal(noBukti) {
+  const entries = state.jurnals.filter((j) => j.noBukti === noBukti);
+  if (entries.length === 0) return;
+
+  editingNoBukti = noBukti;
+
+  const titleEl = document.getElementById("input-jurnal-title");
+  if (titleEl) {
+    titleEl.innerHTML = `<span class="text-blue-600"><i class="fas fa-edit mr-2"></i>Edit Transaksi: ${noBukti}</span>`;
+  }
+  const descEl = document.getElementById("input-jurnal-desc");
+  if (descEl) {
+    descEl.textContent = "Silakan ubah tanggal, kelompok, atau detail transaksi di bawah ini, lalu klik Simpan Transaksi.";
+  }
+
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  if (cancelBtn) {
+    cancelBtn.classList.remove("hidden");
+  }
+
+  const dateInput = document.getElementById("batch-tanggal");
+  if (dateInput) {
+    dateInput.value = entries[0].tanggal;
+  }
+  const kelompokSelect = document.getElementById("batch-kelompok");
+  if (kelompokSelect) {
+    kelompokSelect.value = entries[0].kelompok;
+  }
+
+  const tbody = document.getElementById("jurnal-input-body");
+  if (tbody) {
+    tbody.innerHTML = "";
+  }
+
+  const transactionsByKeterangan = entries.reduce((acc, j) => {
+    if (!acc[j.keterangan]) {
+      acc[j.keterangan] = {
+        debit: 0,
+        kredit: 0,
+        akunDebit: "",
+        akunKredit: "",
+      };
+    }
+    if (j.debit > 0) {
+      acc[j.keterangan].debit += j.debit;
+      acc[j.keterangan].akunDebit = j.akun;
+    }
+    if (j.kredit > 0) {
+      acc[j.keterangan].kredit += j.kredit;
+      acc[j.keterangan].akunKredit = j.akun;
+    }
+    return acc;
+  }, {});
+
+  Object.entries(transactionsByKeterangan).forEach(([keterangan, trx]) => {
+    const newRow = document.createElement("tr");
+    newRow.innerHTML = `
+          <td class="p-1"><input type="text" class="input-keterangan" value="${keterangan}" placeholder="Keterangan transaksi" required></td>
+          <td class="p-1"><select class="input-akun-debit" required>${getAkunOptions(true)}</select></td>
+          <td class="p-1"><select class="input-akun-kredit" required>${getAkunOptions(true)}</select></td>
+          <td class="p-1"><input type="number" class="input-jumlah" value="${trx.debit}" placeholder="0" min="0" required></td>
+          <td class="p-1 text-center"><button class="delete-row-btn text-gray-400 hover:text-red-500 p-2"><i class="fas fa-trash-alt"></i></button></td>
+      `;
+    tbody.appendChild(newRow);
+
+    newRow.querySelector(".input-akun-debit").value = trx.akunDebit;
+    newRow.querySelector(".input-akun-kredit").value = trx.akunKredit;
+  });
+
+  document.getElementById("jurnal-tab").scrollIntoView({ behavior: "smooth" });
+}
+
+export function cancelEdit() {
+  editingNoBukti = null;
+
+  const titleEl = document.getElementById("input-jurnal-title");
+  if (titleEl) {
+    titleEl.textContent = "Input Transaksi";
+  }
+  const descEl = document.getElementById("input-jurnal-desc");
+  if (descEl) {
+    descEl.textContent = "Atur tanggal dan kelompok, lalu tambahkan satu atau lebih baris detail transaksi.";
+  }
+
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  if (cancelBtn) {
+    cancelBtn.classList.add("hidden");
+  }
+
+  const defaultDate = new Date(state.currentMonth + "-01")
+    .toISOString()
+    .split("T")[0];
+  const dateInput = document.getElementById("batch-tanggal");
+  if (dateInput) {
+    dateInput.value = defaultDate;
+  }
+
+  const kelompokSelect = document.getElementById("batch-kelompok");
+  if (kelompokSelect) {
+    kelompokSelect.value = "";
+  }
+
+  const tbody = document.getElementById("jurnal-input-body");
+  if (tbody) {
+    tbody.innerHTML = "";
+  }
+  addInputRow();
 }
