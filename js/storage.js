@@ -27,9 +27,9 @@ export const storage = {
       akuns: [
         { name: "Kas", type: "Aset" },
         { name: "Kas Proyek", type: "Aset" },
-        { name: "Tabungan", type: "Aset"},
         { name: "Kas Kecil", type: "Aset" },
         { name: "Bank", type: "Aset" },
+         { name: "Tabungan", type: "Aset"},
         { name: "hutang Karyawan", type: "Liabilitas" },
         { name: "Piutang Lainnya", type: "Aset" },
         { name: "Piutang Usaha", type: "Aset" },

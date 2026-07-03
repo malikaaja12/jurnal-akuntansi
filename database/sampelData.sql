@@ -4,7 +4,7 @@ USE pacific_ac;
 -- Default Accounts
 INSERT IGNORE INTO accounts (name, type) VALUES
 ('Kas Proyek', 'Aset'),
-('Kas Uatama','Aset'),
+('Kas Utama','Aset'),
 ('Bank', 'Aset'),
 ('Tabungan', 'Aset'),
 ('Kas Kecil','Aset'),
