@@ -1,8 +1,8 @@
 import { state } from "../state.js";
 import { utils } from "../utils.js";
 import { storage } from "../storage.js";
-import { pdfService } from "../services/pdf.js";
 import { renderAll } from "../app.js"; // Need to import this to redraw on reset
+import { pdfService } from "../services/pdf.js";
 
 export function renderPengaturanTab() {
   const container = document.getElementById("pengaturan-tab");
@@ -15,11 +15,9 @@ export function renderPengaturanTab() {
                       </div>
                       <div class="space-y-4 position-relative text-center grid grid-cols-1">
                           <button id="btn-save-current" class="w-fullflex items-center py-3 px-4 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50"> <i class="fas fa-save mr-3 text-lg text-blue-500"></i> <div> <span>Simpan Data Bulan Ini</span> <span class="block text-xs text-gray-500">Simpan progres untuk periode aktif saat ini.</span> </div> </button>
-                          <button id="btn-load-month" class="w-fullflex items-center py-3 px-4 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50"> <i class="fas fa-folder-open mr-3 text-lg text-yellow-500"></i> <div> <span>Muat Data Bulan Lain</span> <span class="block text-xs text-gray-500">Buka dan kelola data dari periode lain.</span> </div> </button>
-                          <button id="btn-gen-category-pdf" class="w-fullflex text-center items-center py-3 px-4 border border-red-200 text-red-500 text-sm font-medium rounded-md hover:bg-red-50 "> <i class="fas fa-layer-group mr-3 text-lg text-red-500"></i> <div> 
-                          <span>Download Laporan Akuntansi</span> 
-                          <span class="block text-xs text-gray-500">Unduh Jurnal Akuntansi untuk periode aktif.</span> </div>
-                           </button>
+                           <button id="btn-load-month" class="w-fullflex items-center py-3 px-4 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50"> <i class="fas fa-folder-open mr-3 text-lg text-yellow-500"></i> <div> <span>Muat Data Bulan Lain</span> <span class="block text-xs text-gray-500">Buka dan kelola data dari periode lain.</span> </div> </button>
+                           <button id="btn-gen-pdf" class="w-fullflex items-center py-3 px-4 border border-red-200 text-red-700 text-sm font-medium rounded-md hover:bg-red-50"> <i class="fas fa-file-pdf mr-3 text-lg text-red-500"></i> <div> <span>Download Laporan Bulanan (PDF)</span> <span class="block text-xs text-gray-500">Unduh laporan keuangan periode aktif.</span> </div> </button>
+
                       <div class="grid grid-cols-2 gap-2 pt-2 border-t mt-2 text-center">
                           <button id="btn-import" class="w-fullflex items-center py-3 px-4 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50"> <i class="fas fa-upload mr-3 text-lg text-green-500"></i> <div> <span>Impor Data</span> <span class="block text-xs text-gray-500">Muat data darifile.</span> </div> </button>
                           <button id="btn-export" class="w-fullflex items-center py-3 px-4 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50"> <i class="fas fa-download mr-3 text-lg text-indigo-500"></i> <div> <span>Ekspor Data</span> <span class="block text-xs text-gray-500">Simpan semua data ke file.</span> </div> </button>
@@ -39,10 +37,11 @@ function attachSettingsListeners() {
   document
     .getElementById("btn-load-month")
     .addEventListener("click", () => showLoadModal());
-
   document
     .getElementById("btn-gen-pdf")
     .addEventListener("click", () => pdfService.generatePDF());
+
+
 
   document
     .getElementById("btn-import")
